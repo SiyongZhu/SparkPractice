@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.Optional;
 
 import scala.Tuple2;
 
@@ -158,8 +159,21 @@ public class SparkTest {
 		JavaPairRDD<Integer, Integer> visits = sc.parallelizePairs(visitsRaw);
 		JavaPairRDD<Integer, String> users = sc.parallelizePairs(usersRaw);
 		
+		//Inner Join
+		System.out.println("Run an Inner Join");
 		JavaPairRDD<Integer, Tuple2<Integer, String>> joinedRdd = visits.join(users);
 		joinedRdd.foreach(rdd -> System.out.println(rdd));
 		
+		//Outer Join
+		System.out.println("\n\nRun left Outer Join");
+		JavaPairRDD<Integer, Tuple2<Integer, Optional<String>>> leftOuterJoinRdd = visits.leftOuterJoin(users);
+		leftOuterJoinRdd.foreach(joinedRecord -> System.out.println(joinedRecord._1+": " + joinedRecord._2._2.orElse("NoName")));
+		
+		
+		System.out.println("\n\nRun Right Outer Join");
+		JavaPairRDD<Integer, Tuple2<Optional<Integer>, String>> rightOuterJoinRdd = visits.rightOuterJoin(users);
+		rightOuterJoinRdd.foreach(joinedRecord -> System.out.println(joinedRecord._1+": " 
+																	+ joinedRecord._2._2 + " have visited " 
+																	+joinedRecord._2._1.orElse(0)+" times"));
 	}
 }
