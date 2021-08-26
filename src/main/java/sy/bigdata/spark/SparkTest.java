@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -16,8 +17,15 @@ public class SparkTest {
 
 	private JavaSparkContext sc;
 	
-	public SparkTest(JavaSparkContext sc ) {
-		this.sc = sc;
+	public SparkTest() {
+		SparkConf conf = new SparkConf().setAppName("start").setMaster("local[*]");
+		
+		conf.set("spark.task.maxFailures", "10")
+            .set("spark.network.timeout", "1200000")
+            .set("spark.rpc.lookupTimeout", "1200000")
+            .set("spark.mesos.executor.memoryOverhead", "1500");
+		
+		this.sc = new JavaSparkContext(conf);
 	}
 	
 	public void mapTest() {
@@ -175,5 +183,9 @@ public class SparkTest {
 		rightOuterJoinRdd.foreach(joinedRecord -> System.out.println(joinedRecord._1+": " 
 																	+ joinedRecord._2._2 + " have visited " 
 																	+joinedRecord._2._1.orElse(0)+" times"));
+	}
+	
+	public void close() {
+		this.sc.close();
 	}
 }
