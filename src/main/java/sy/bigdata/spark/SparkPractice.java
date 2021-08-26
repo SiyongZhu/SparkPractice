@@ -25,17 +25,13 @@ public class SparkPractice {
 		
 		
 		SparkTest test = new SparkTest(sc);
-		test.loadFromDiskTest();
+//		test.loadFromDiskTest();
+		
+//		test.findTopTenMostFreqWords();
+		
+		test.joinTest();
 		
 		
-		
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			sc.close();
-		}
 		
 		
 		

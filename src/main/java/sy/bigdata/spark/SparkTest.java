@@ -120,7 +120,46 @@ public class SparkTest {
 	
 	public void loadFromDiskTest() {
 		JavaRDD<String> initialRdd = sc.textFile("src/main/resources/subtitles/input.txt");
+		//Note: flapMap expect a lambda function to return a iterator interface
 		initialRdd.flatMap(value -> Arrays.asList(value.split(" ")).iterator())
 					.foreach(val -> System.out.println(val));
+	}
+	
+	public void findTopTenMostFreqWords() {
+		int top = 10;
+		JavaRDD<String> initialRdd = sc.textFile("src/main/resources/subtitles/input.txt");
+		
+		JavaRDD<String> letterOnlyRdd = initialRdd.map(sentence -> sentence.toLowerCase().replaceAll("[^a-zA-Z\\s]", " ")) //replace non-alphabet word
+												.flatMap(sentence -> Arrays.asList(sentence.split(" ")).iterator()) //split sentence to words
+												.filter(word -> word.strip().length()>0) //filter out empty spaces
+												.filter(word -> Util.isNotBoring(word));
+		JavaPairRDD<Long, String> pairRdd = letterOnlyRdd.mapToPair(word -> new Tuple2<String, Long>(word, 1L)) //convert to pairRDD such as ("word", 1)
+														 .reduceByKey((val1, val2) -> val1+val2)
+														 .mapToPair(tuple -> new Tuple2<Long, String> (tuple._2, tuple._1)) //pairRDD to pairRDD, still use mapToPair()
+														 .sortByKey(false);
+//		pairRdd.foreach(e -> System.out.println(e)); //<== This will not work b/c foreach run on each partition in parllel 
+		pairRdd.take(top).forEach(System.out::println);
+	}
+	
+	public void joinTest() {
+		List<Tuple2<Integer, Integer>> visitsRaw = new ArrayList<>();
+		visitsRaw.add(new Tuple2<Integer, Integer>(4, 8));
+		visitsRaw.add(new Tuple2<Integer, Integer>(6, 4));
+		visitsRaw.add(new Tuple2<Integer, Integer>(10, 9));
+		
+		List<Tuple2<Integer, String>> usersRaw = new ArrayList<>();
+		usersRaw.add(new Tuple2<Integer, String>(1, "John"));
+		usersRaw.add(new Tuple2<Integer, String>(2, "Bob"));
+		usersRaw.add(new Tuple2<Integer, String>(3, "Alan"));
+		usersRaw.add(new Tuple2<Integer, String>(4, "Doris"));
+		usersRaw.add(new Tuple2<Integer, String>(5, "Mary"));
+		usersRaw.add(new Tuple2<Integer, String>(6, "Raquel"));
+		
+		JavaPairRDD<Integer, Integer> visits = sc.parallelizePairs(visitsRaw);
+		JavaPairRDD<Integer, String> users = sc.parallelizePairs(usersRaw);
+		
+		JavaPairRDD<Integer, Tuple2<Integer, String>> joinedRdd = visits.join(users);
+		joinedRdd.foreach(rdd -> System.out.println(rdd));
+		
 	}
 }
